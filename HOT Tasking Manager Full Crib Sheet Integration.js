@@ -1,8 +1,8 @@
 // ==UserScript==
 // @name         HOT Tasking Manager Full Crib Sheet Integration
 // @namespace    http://tampermonkey.net/
-// @version      2.5
-// @description  Embeds the full crib sheet and places a floating button at the bottom-left corner of the screen.
+// @version      2.6
+// @description  Embeds the full crib sheet, places a floating button at the bottom-left corner, and makes the dialog draggable.
 // @author       You
 // @match        *://tasks.hotosm.org/*
 // @grant        none
@@ -13,8 +13,8 @@
 
     const cribSheetHTML = `
         <div id="hot-crib-modal" style="display:none; position:fixed; top:40px; right:40px; width:650px; height:80vh; background:white; border:2px solid #ccc; z-index:10000; box-shadow:0 4px 16px rgba(0,0,0,0.3); border-radius:8px; flex-direction:column; font-family:sans-serif;">
-            <div style="background:#d32f2f; color:white; padding:12px 16px; display:flex; justify-content:space-between; align-items:center; border-top-left-radius:6px; border-top-right-radius:6px;">
-                <h3 style="margin:0; font-size:16px;">HOT Validation Crib Sheet v4 (Full)</h3>
+            <div id="hot-crib-header" style="background:#d32f2f; color:white; padding:12px 16px; display:flex; justify-content:space-between; align-items:center; border-top-left-radius:6px; border-top-right-radius:6px; cursor:move; user-select:none;">
+                <h3 style="margin:0; font-size:16px; pointer-events:none;">HOT Validation Crib Sheet v4 (Full)</h3>
                 <button id="close-crib-btn" style="background:none; border:none; color:white; font-size:20px; cursor:pointer;">&times;</button>
             </div>
             <div id="crib-content" style="padding:16px; overflow-y:auto; flex-grow:1; font-size:13px; line-height:1.4; color:#333;">
@@ -72,6 +72,49 @@
     document.body.appendChild(wrapper);
 
     const modal = document.getElementById('hot-crib-modal');
+    const header = document.getElementById('hot-crib-header');
+
+    // --- DRAG-AND-DROP LOGIC ---
+    function makeDraggable(dialogEl, handleEl) {
+        let pos1 = 0, pos2 = 0, pos3 = 0, pos4 = 0;
+
+        handleEl.onmousedown = dragMouseDown;
+
+        function dragMouseDown(e) {
+            e.preventDefault();
+            // Get mouse position at startup
+            pos3 = e.clientX;
+            pos4 = e.clientY;
+
+            document.onmouseup = closeDragElement;
+            document.onmousemove = elementDrag;
+        }
+
+        function elementDrag(e) {
+            e.preventDefault();
+            // Calculate new cursor position difference
+            pos1 = pos3 - e.clientX;
+            pos2 = pos4 - e.clientY;
+            pos3 = e.clientX;
+            pos4 = e.clientY;
+
+            // Set dialog's new position
+            dialogEl.style.top = (dialogEl.offsetTop - pos2) + "px";
+            dialogEl.style.left = (dialogEl.offsetLeft - pos1) + "px";
+
+            // Clear out conflicting constraints
+            dialogEl.style.right = "auto";
+            dialogEl.style.bottom = "auto";
+        }
+
+        function closeDragElement() {
+            document.onmouseup = null;
+            document.onmousemove = null;
+        }
+    }
+
+    // Initialize dragging on the modal using the red header as the handle
+    makeDraggable(modal, header);
 
     // Create a guaranteed floating button at the bottom-left of the viewport
     const triggerBtn = document.createElement('button');
