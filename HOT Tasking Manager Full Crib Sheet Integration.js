@@ -1,9 +1,9 @@
 // ==UserScript==
 // @name         HOT Tasking Manager Full Crib Sheet Integration
 // @namespace    http://tampermonkey.net/
-// @version      2.6
+// @version      2.7
 // @description  Embeds the full crib sheet, places a floating button at the bottom-left corner, and makes the dialog draggable.
-// @author       You
+// @author       wireguy
 // @match        *://tasks.hotosm.org/*
 // @grant        none
 // ==/UserScript==
@@ -11,7 +11,7 @@
 (function() {
     'use strict';
 
-    const cribSheetHTML = `
+  const cribSheetHTML = `
         <div id="hot-crib-modal" style="display:none; position:fixed; top:40px; right:40px; width:650px; height:80vh; background:white; border:2px solid #ccc; z-index:10000; box-shadow:0 4px 16px rgba(0,0,0,0.3); border-radius:8px; flex-direction:column; font-family:sans-serif;">
             <div id="hot-crib-header" style="background:#d32f2f; color:white; padding:12px 16px; display:flex; justify-content:space-between; align-items:center; border-top-left-radius:6px; border-top-right-radius:6px; cursor:move; user-select:none;">
                 <h3 style="margin:0; font-size:16px; pointer-events:none;">HOT Validation Crib Sheet v4 (Full)</h3>
@@ -31,19 +31,17 @@
                 <label style="display:block; margin-bottom:6px;"><input type="checkbox" class="crib-opt" value="Please only mark the task as complete when it is fully mapped according to the project requirements in the task instructions. If you want to move on and try a different task, just say 'no' to the 'Is this task completely mapped?' question or use the 'select another task' button."> Task completion guidance</label>
 
                 <!-- More work needed -->
-                <h4 style="margin:8px 0; color:#d32f2f;">More Work Needed</h4>
-                <label style="display:block; margin-bottom:6px;"><input type="checkbox" class="crib-opt" checked value="More work is required to complete this task and ensure that it is well mapped:"> More work is required header</label>
-                <div style="padding-left:15px; border-left:2px solid #eee; margin-bottom:8px;">
-                    <label style="display:block; margin-bottom:4px;"><input type="checkbox" class="crib-sub" value="- The previously mapped buildings need to be moved to match the current imagery and surrounding tasks."> The previously mapped buildings need to be moved to match current imagery.</label>
-                    <label style="display:block; margin-bottom:4px;"><input type="checkbox" class="crib-sub" value="- Buildings need to be added and removed to reflect what is visible in the imagery."> Buildings need to be added/removed to reflect imagery.</label>
-                    <label style="display:block; margin-bottom:4px;"><input type="checkbox" class="crib-sub" value="- There are more buildings that need to be mapped."> There are more buildings that need to be mapped.</label>
-                    <label style="display:block; margin-bottom:4px;"><input type="checkbox" class="crib-sub" value="- Please map individual buildings without collecting multiple nearby buildings into a single object."> Map individual buildings separately.</label>
-                    <label style="display:block; margin-bottom:4px;"><input type="checkbox" class="crib-sub" value="- Please accurately outline all buildings."> Accurately outline all buildings.</label>
-                    <label style="display:block; margin-bottom:4px;"><input type="checkbox" class="crib-sub" value="- Buildings should be mapped without snapping their corners to other buildings and features such as roads and paths."> Do not snap corners to roads/other buildings.</label>
-                    <label style="display:block; margin-bottom:4px;"><input type="checkbox" class="crib-sub" value="- Buildings should have their corners squared."> Buildings should have squared corners.</label>
-                    <label style="display:block; margin-bottom:4px;"><input type="checkbox" class="crib-sub" value="- Buildings should not overlap other buildings and features."> Buildings should not overlap.</label>
-                </div>
-                <label style="display:block; margin-bottom:6px;"><input type="checkbox" class="crib-opt" checked value="Check the task instructions for the full requirements."> Check task instructions for full requirements.</label>
+                  <h4 style="margin:8px 0; color:#d32f2f;">More Work Needed</h4>
+                  <label style="display:block; margin-bottom:6px;"><input type="checkbox" class="crib-opt" checked value="More work is required to complete this task and ensure that it is well mapped:"> More work is required header</label>
+                  <label style="display:block; margin-bottom:4px;"><input type="checkbox" class="crib-opt" value="- The previously mapped buildings need to be moved to match the current imagery and surrounding tasks."> The previously mapped buildings need to be moved to match current imagery.</label>
+                  <label style="display:block; margin-bottom:4px;"><input type="checkbox" class="crib-opt" value="- Buildings need to be added and removed to reflect what is visible in the imagery."> Buildings need to be added/removed to reflect imagery.</label>
+                  <label style="display:block; margin-bottom:4px;"><input type="checkbox" class="crib-opt" value="- There are more buildings that need to be mapped."> There are more buildings that need to be mapped.</label>
+                  <label style="display:block; margin-bottom:4px;"><input type="checkbox" class="crib-opt" value="- Please map individual buildings without collecting multiple nearby buildings into a single object."> Map individual buildings separately.</label>
+                  <label style="display:block; margin-bottom:4px;"><input type="checkbox" class="crib-opt" value="- Please accurately outline all buildings."> Accurately outline all buildings.</label>
+                  <label style="display:block; margin-bottom:4px;"><input type="checkbox" class="crib-opt" value="- Buildings should be mapped without snapping their corners to other buildings and features such as roads and paths."> Do not snap corners to roads/other buildings.</label>
+                  <label style="display:block; margin-bottom:4px;"><input type="checkbox" class="crib-opt" value="- Buildings should have their corners squared."> Buildings should have squared corners.</label>
+                  <label style="display:block; margin-bottom:4px;"><input type="checkbox" class="crib-opt" value="- Buildings should not overlap other buildings and features."> Buildings should not overlap.</label>
+                 <label style="display:block; margin-bottom:6px;"><input type="checkbox" class="crib-opt" checked value="Check the task instructions for the full requirements."> Check task instructions for full requirements.</label>
 
                 <!-- Advice / Tips -->
                 <h4 style="margin:8px 0; color:#d32f2f;">Advice / Tips</h4>
@@ -65,6 +63,8 @@
             </div>
         </div>
     `;
+
+
 
     // Inject modal into DOM
     const wrapper = document.createElement('div');
@@ -134,12 +134,12 @@
     // Handle comment injection with double newlines separating options
     document.getElementById('inject-comment-btn').addEventListener('click', () => {
         const checkedOpts = Array.from(document.querySelectorAll('.crib-opt:checked')).map(cb => cb.value);
-        const checkedSubs = Array.from(document.querySelectorAll('.crib-sub:checked')).map(cb => cb.value);
+//        const checkedSubs = Array.from(document.querySelectorAll('.crib-sub:checked')).map(cb => cb.value);
 
         let allItems = [...checkedOpts];
-        if (checkedSubs.length > 0) {
-            allItems = allItems.concat(checkedSubs);
-        }
+//        if (checkedSubs.length > 0) {
+//            allItems = allItems.concat(checkedSubs);
+//        }
 
         let feedbackText = allItems.join('\n\n');
 
